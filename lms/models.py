@@ -3,16 +3,12 @@ from django.conf import settings
 
 
 class Course(models.Model):
-    title = models.CharField(max_length=200)
-    preview = models.ImageField(upload_to='course_previews/', null=True, blank=True)
-    description = models.TextField()
-    owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name='courses'
-    )
+    title = models.CharField(max_length=150)
+    description = models.TextField(blank=True, default='')  # необязательное
+    preview = models.ImageField(upload_to='course_previews', blank=True, null=True)
+
+    class Meta:
+        ordering = ['id']  # сортировка для пагинации
 
     def __str__(self):
         return self.title
@@ -20,56 +16,43 @@ class Course(models.Model):
 
 class Lesson(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='lessons')
-    title = models.CharField(max_length=200)
-    description = models.TextField()
-    preview = models.ImageField(upload_to='lesson_previews/', null=True, blank=True)
-    video_url = models.URLField()
-    owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name='lessons'
-    )
+    title = models.CharField(max_length=150)
+    description = models.TextField(blank=True, default='')  # необязательное
+    video_url = models.URLField(blank=True, null=True)
+    preview = models.ImageField(upload_to='lesson_previews', blank=True, null=True)
+
+    class Meta:
+        ordering = ['id']
 
     def __str__(self):
         return self.title
 
-class Payment(models.Model):
-    CASH = 'cash'
-    TRANSFER = 'transfer'
 
-    PAYMENT_METHODS = [
-        (CASH, 'Наличные'),
-        (TRANSFER, 'Перевод'),
+class Payment(models.Model):
+    PAYMENT_METHOD_CHOICES = [
+        ('cash', 'Наличные'),
+        ('transfer', 'Перевод на счет'),
     ]
 
-    user = models.ForeignKey(
-        'users.User',
-        on_delete=models.CASCADE,
-        related_name='payments'
-    )
-    payment_date = models.DateTimeField(auto_now_add=True)
-    course = models.ForeignKey(
-        Course,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='payments'
-    )
-    lesson = models.ForeignKey(
-        Lesson,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='payments'
-    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='payments')
+    course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, blank=True, related_name='payments')
+    lesson = models.ForeignKey(Lesson, on_delete=models.SET_NULL, null=True, blank=True, related_name='payments')
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    payment_method = models.CharField(
-        max_length=10,
-        choices=PAYMENT_METHODS,
-        default=TRANSFER,
-    )
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES)
+    payment_date = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f'{self.user.email} - {self.amount}'
+        return f'{self.user} - {self.amount}'
+
+
+class Subscription(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='subscriptions')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='subscriptions')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'course')
+        ordering = ['id']
+
+    def __str__(self):
+        return f'{self.user.email} -> {self.course.title}'

@@ -1,6 +1,13 @@
-from lms.models import Course, Lesson
 from rest_framework import serializers
-from lms.models import Payment
+from lms.models import Course, Lesson, Payment, Subscription
+from lms.validators import validate_youtube_url
+
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subscription
+        fields = '__all__'
+
 
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -9,21 +16,28 @@ class PaymentSerializer(serializers.ModelSerializer):
 
 
 class LessonSerializer(serializers.ModelSerializer):
-    owner = serializers.ReadOnlyField(source='owner.id')
-
     class Meta:
         model = Lesson
-        fields = ['id', 'course', 'owner', 'title', 'description', 'preview', 'video_url']
+        fields = '__all__'
+
+    def validate_video_url(self, value):
+        if value:
+            return validate_youtube_url(value)
+        return value
 
 
 class CourseSerializer(serializers.ModelSerializer):
-    lessons = LessonSerializer(many=True, read_only=True)
-    lessons_count = serializers.SerializerMethodField()
-    owner = serializers.ReadOnlyField(source='owner.id')
+    is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
-        fields = ['id', 'owner', 'title', 'preview', 'description', 'lessons', 'lessons_count']
+        fields = '__all__'
 
-    def get_lessons_count(self, obj):
-        return obj.lessons.count()
+    def get_is_subscribed(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return Subscription.objects.filter(
+                user=request.user,
+                course=obj
+            ).exists()
+        return False

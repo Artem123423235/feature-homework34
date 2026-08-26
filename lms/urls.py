@@ -1,12 +1,11 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from lms.views import CourseViewSet, LessonListCreateAPIView, LessonRetrieveUpdateDestroyAPIView
+from lms.views import CourseViewSet, LessonViewSet
 
 router = DefaultRouter()
-router.register('', CourseViewSet, basename='course')
+router.register('courses', CourseViewSet)
+router.register('lessons', LessonViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('lessons/', LessonListCreateAPIView.as_view(), name='lesson-list'),
-    path('lessons/<int:pk>/', LessonRetrieveUpdateDestroyAPIView.as_view(), name='lesson-detail'),
 ]
