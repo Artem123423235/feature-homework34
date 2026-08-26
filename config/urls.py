@@ -1,19 +1,16 @@
 from django.contrib import admin
 from django.urls import path, include
-from django.views.generic import RedirectView
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-    TokenVerifyView,
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularSwaggerView,
+    SpectacularRedocView,
 )
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', RedirectView.as_view(url='/lms/courses/', permanent=True)),
-    path('lms/', include('lms.urls')),
-    path('users/', include('users.urls')),
-
-    path('users/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('users/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('users/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
+    path('api/', include('courses.urls')),
+    path('api/', include('payments.urls')),
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='docs'),
+    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]
