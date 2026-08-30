@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+from datetime import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -18,6 +19,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'courses',
     'payments',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -79,4 +81,38 @@ REST_FRAMEWORK = {
 SPECTACULAR_SETTINGS = {
     'TITLE': 'LMS API',
     'VERSION': '1.0.0',
+}
+
+REDIS_URL="redis://localhost:6379/0"
+EMAIL_HOST_USER="your_email@gmail.com"
+EMAIL_HOST_PASSWORD="your_password"
+
+# Redis
+REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+
+# Celery
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'  # обязательно совпадает с TIME_ZONE
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+# Email (для разработки используем консоль)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # письма будут выводиться в консоль
+# Для реальной отправки используйте SMTP-настройки (пример ниже)
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+# EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+
+# Для celery-beat
+CELERY_BEAT_SCHEDULE = {
+    'block-inactive-users-every-day': {
+        'task': 'courses.tasks.block_inactive_users',
+        'schedule': timedelta(hours=24),  # можно также crontab(minute=0, hour=0)
+    },
 }
