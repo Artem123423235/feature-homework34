@@ -8,6 +8,18 @@ SECRET_KEY = 'django-insecure-your-secret-key-here'
 DEBUG = True
 ALLOWED_HOSTS = []
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 5,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -15,14 +27,19 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',
     'drf_spectacular',
-    'courses',
     'payments',
     'django_celery_beat',
+    'rest_framework_simplejwt',
+    'corsheaders',
+    'courses',
+    'habits',
+    'djoser',
+    'users'
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -74,13 +91,11 @@ USE_TZ = True
 STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-REST_FRAMEWORK = {
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-}
-
 SPECTACULAR_SETTINGS = {
     'TITLE': 'LMS API',
+    'DESCRIPTION': 'API для управления привычками',
     'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False
 }
 
 REDIS_URL="redis://localhost:6379/0"
@@ -115,4 +130,17 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'courses.tasks.block_inactive_users',
         'schedule': timedelta(hours=24),  # можно также crontab(minute=0, hour=0)
     },
+    'send-habit-reminders-every-minute': {
+        'task': 'habits.tasks.send_habit_reminders',
+        'schedule': 60.0,  # каждую минуту
+    },
 }
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+AUTH_USER_MODEL = 'users.User'
+
+TELEGRAM_BOT_TOKEN = "8858978063:AAH1v87gA7HVvYIlw7ZOloDQ8Mdvo6fs1Xw"
