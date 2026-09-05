@@ -1,6 +1,6 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
-
+from django.conf import settings
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -32,3 +32,14 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
+
+class TelegramProfile(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='telegram_profile'
+    )
+    chat_id = models.CharField(max_length=100, verbose_name='Telegram chat_id')
+
+    def __str__(self):
+        return self.user.email
